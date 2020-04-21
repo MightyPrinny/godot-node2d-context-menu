@@ -24,6 +24,11 @@ func popup_menu(position):
 	menu.popup(Rect2(get_editor_interface().get_editor_viewport().get_global_mouse_position(),Vector2(1,1)))
 	
 func _enter_tree():
+	var temp = Control.new()
+	add_control_to_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU,temp)
+	open_configure_snap(temp.get_parent())
+	remove_control_from_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU,temp)
+	temp.free()
 	watch_snap_settings(get_editor_interface().get_base_control())
 	menu = PopupMenu.new()
 	menu.add_item("Move here with snap", MoveHereWithSnap)
@@ -48,6 +53,18 @@ func _exit_tree():
 	if is_instance_valid(menu):
 		menu.queue_free()
 	obj = null
+	
+func open_configure_snap(canvas_toolbar):
+	for child in canvas_toolbar.get_children():
+		if child is MenuButton:
+			if child.text == "":
+				var popup = child.get_popup() as PopupMenu
+				var id = popup.get_item_index(11)
+				if popup.get_item_text(id) == tr("Configure Snap..."):
+					print("Scene Palette: configuring snap")
+					popup.emit_signal("id_pressed",11)
+					return
+	print("Node2D Context Menu: Failed find configure snap button")
 	
 func handles(var potential):
 	if potential is Node2D:
@@ -119,6 +136,8 @@ func watch_snap_settings(root:Node):
 		if child is Label:
 			if child.text == tr("Grid Offset:"):
 				var container:GridContainer = child.get_node("..")
+				var snap_dialog:ConfirmationDialog = container.get_node("../..")
+				snap_dialog.get_close_button().emit_signal("pressed")
 				var off_x:SpinBox = container.get_child(1)
 				var off_y:SpinBox = container.get_child(2)
 				var step_x:SpinBox = container.get_child(4)
